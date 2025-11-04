@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:flowable="http://flowable.org/bpmn"
+             xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+             xmlns:omgdc="http://www.omg.org/spec/DD/20100524/DC"
+             xmlns:omgdi="http://www.omg.org/spec/DD/20100524/DI"
+             typeLanguage="http://www.w3.org/2001/XMLSchema"
+             expressionLanguage="http://www.w3.org/1999/XPath"
+             targetNamespace="http://www.flowable.org/processdef">
+
+    <process id="leaveProcess" name="请假流程" isExecutable="true">
+
+        <!-- 开始事件 -->
+        <startEvent id="startEvent" name="开始"/>
+
+        <!-- 经理审批任务 -->
+        <userTask id="managerApproval" name="经理审批" flowable:assignee="manager">
+            <documentation>经理审批请假申请</documentation>
+        </userTask>
+
+        <!-- 排他网关：判断审批结果 -->
+        <exclusiveGateway id="approvalDecision" name="审批决策"/>
+
+        <!-- HR备案任务（审批通过） -->
+        <userTask id="hrRecord" name="HR备案" flowable:assignee="hr">
+            <documentation>HR部门记录请假信息</documentation>
+        </userTask>
+
+        <!-- 拒绝结束事件 -->
+        <endEvent id="rejectedEnd" name="请假被拒绝"/>
+
+        <!-- 批准结束事件 -->
+        <endEvent id="approvedEnd" name="请假已批准"/>
+
+        <!-- 流程连线 -->
+        <sequenceFlow id="flow1" sourceRef="startEvent" targetRef="managerApproval"/>
+
+        <sequenceFlow id="flow2" sourceRef="managerApproval" targetRef="approvalDecision"/>
+
+        <!-- 审批通过分支 -->
+        <sequenceFlow id="approvedFlow" name="批准" sourceRef="approvalDecision" targetRef="hrRecord">
+            <conditionExpression xsi:type="tFormalExpression">
+                <![CDATA[${approved == true}]]>
+            </conditionExpression>
+        </sequenceFlow>
+
+        <!-- 审批拒绝分支 -->
+        <sequenceFlow id="rejectedFlow" name="拒绝" sourceRef="approvalDecision" targetRef="rejectedEnd">
+            <conditionExpression xsi:type="tFormalExpression">
+                <![CDATA[${approved == false}]]>
+            </conditionExpression>
+        </sequenceFlow>
+
+        <sequenceFlow id="flow5" sourceRef="hrRecord" targetRef="approvedEnd"/>
+
+    </process>
+
+    <!-- BPMN图形信息 -->
+    <bpmndi:BPMNDiagram id="BPMNDiagram_leaveProcess">
+        <bpmndi:BPMNPlane bpmnElement="leaveProcess" id="BPMNPlane_leaveProcess">
+
+            <!-- 开始事件图形 -->
+            <bpmndi:BPMNShape bpmnElement="startEvent" id="BPMNShape_startEvent">
+                <omgdc:Bounds height="30.0" width="30.0" x="100.0" y="163.0"/>
+            </bpmndi:BPMNShape>
+
+            <!-- 经理审批图形 -->
+            <bpmndi:BPMNShape bpmnElement="managerApproval" id="BPMNShape_managerApproval">
+                <omgdc:Bounds height="80.0" width="100.0" x="200.0" y="138.0"/>
+            </bpmndi:BPMNShape>
+
+            <!-- 审批决策图形 -->
+            <bpmndi:BPMNShape bpmnElement="approvalDecision" id="BPMNShape_approvalDecision">
+                <omgdc:Bounds height="40.0" width="40.0" x="370.0" y="158.0"/>
+            </bpmndi:BPMNShape>
+
+            <!-- HR备案图形 -->
+            <bpmndi:BPMNShape bpmnElement="hrRecord" id="BPMNShape_hrRecord">
+                <omgdc:Bounds height="80.0" width="100.0" x="480.0" y="60.0"/>
+            </bpmndi:BPMNShape>
+
+            <!-- 拒绝结束图形 -->
+            <bpmndi:BPMNShape bpmnElement="rejectedEnd" id="BPMNShape_rejectedEnd">
+                <omgdc:Bounds height="28.0" width="28.0" x="480.0" y="220.0"/>
+            </bpmndi:BPMNShape>
+
+            <!-- 批准结束图形 -->
+            <bpmndi:BPMNShape bpmnElement="approvedEnd" id="BPMNShape_approvedEnd">
+                <omgdc:Bounds height="28.0" width="28.0" x="650.0" y="86.0"/>
+            </bpmndi:BPMNShape>
+
+            <!-- 连线图形 -->
+            <bpmndi:BPMNEdge bpmnElement="flow1" id="BPMNEdge_flow1">
+                <omgdi:waypoint x="130.0" y="178.0"/>
+                <omgdi:waypoint x="200.0" y="178.0"/>
+            </bpmndi:BPMNEdge>
+
+            <bpmndi:BPMNEdge bpmnElement="flow2" id="BPMNEdge_flow2">
+                <omgdi:waypoint x="300.0" y="178.0"/>
+                <omgdi:waypoint x="370.0" y="178.0"/>
+            </bpmndi:BPMNEdge>
+
+            <bpmndi:BPMNEdge bpmnElement="approvedFlow" id="BPMNEdge_approvedFlow">
+                <omgdi:waypoint x="390.0" y="158.0"/>
+                <omgdi:waypoint x="390.0" y="100.0"/>
+                <omgdi:waypoint x="480.0" y="100.0"/>
+            </bpmndi:BPMNEdge>
+
+            <bpmndi:BPMNEdge bpmnElement="rejectedFlow" id="BPMNEdge_rejectedFlow">
+                <omgdi:waypoint x="390.0" y="198.0"/>
+                <omgdi:waypoint x="390.0" y="234.0"/>
+                <omgdi:waypoint x="480.0" y="234.0"/>
+            </bpmndi:BPMNEdge>
+
+            <bpmndi:BPMNEdge bpmnElement="flow5" id="BPMNEdge_flow5">
+                <omgdi:waypoint x="580.0" y="100.0"/>
+                <omgdi:waypoint x="650.0" y="100.0"/>
+            </bpmndi:BPMNEdge>
+
+        </bpmndi:BPMNPlane>
+    </bpmndi:BPMNDiagram>
+
+</definitions>
