@@ -1,0 +1,26 @@
+spring:
+  application:
+    name: flowable
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://127.0.0.1:3306/foleable?useUnicode=true&characterEncoding=utf-8&serverTimezone=UTC&useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: 123456
+    type: com.alibaba.druid.pool.DruidDataSource
+    druid:
+      # ?????
+      initial-size: 5
+      min-idle: 5
+      max-active: 20
+      # ???????
+      time-between-eviction-runs-millis: 60000
+      min-evictable-idle-time-millis: 300000
+      validation-query: SELECT 1
+      test-while-idle: true
+      test-on-borrow: false
+      test-on-return: false
+
+flowable:
+  async-executor-activate: true
+  # ?????????????????
+  database-schema-update: true
