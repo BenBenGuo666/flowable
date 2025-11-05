@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Mono;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -36,15 +37,15 @@ public class LeaveController {
      * @return 响应结果
      */
     @PostMapping("/submit")
-    public Result<Map<String, String>> submitLeaveRequest(@Valid @RequestBody LeaveRequestDTO leaveRequest) {
+    public Mono<Result<Map<String, String>>> submitLeaveRequest(@Valid @RequestBody LeaveRequestDTO leaveRequest) {
         log.info("接收请假申请: {}", leaveRequest);
 
-        String processInstanceId = leaveService.submitLeaveRequest(leaveRequest);
-
-        Map<String, String> data = new HashMap<>(1);
-        data.put("processInstanceId", processInstanceId);
-
-        return Result.success("请假申请提交成功", data);
+        return leaveService.submitLeaveRequest(leaveRequest)
+                .map(processInstanceId -> {
+                    Map<String, String> data = new HashMap<>(1);
+                    data.put("processInstanceId", processInstanceId);
+                    return Result.success("请假申请提交成功", data);
+                });
     }
 
     /**
@@ -54,17 +55,17 @@ public class LeaveController {
      * @return 待办任务列表
      */
     @GetMapping("/tasks")
-    public Result<Map<String, Object>> getTaskList(
+    public Mono<Result<Map<String, Object>>> getTaskList(
             @NotBlank(message = "任务处理人不能为空") @RequestParam String assignee) {
         log.info("查询待办任务列表, 处理人: {}", assignee);
 
-        List<Map<String, Object>> tasks = leaveService.getTaskList(assignee);
-
-        Map<String, Object> data = new HashMap<>(2);
-        data.put("tasks", tasks);
-        data.put("count", tasks.size());
-
-        return Result.success(data);
+        return leaveService.getTaskList(assignee)
+                .map(tasks -> {
+                    Map<String, Object> data = new HashMap<>(2);
+                    data.put("tasks", tasks);
+                    data.put("count", tasks.size());
+                    return Result.success(data);
+                });
     }
 
     /**
@@ -75,14 +76,13 @@ public class LeaveController {
      * @return 响应结果
      */
     @PostMapping("/approve/{taskId}")
-    public Result<Void> approveTask(
+    public Mono<Result<Void>> approveTask(
             @NotBlank(message = "任务ID不能为空") @PathVariable String taskId,
             @Valid @RequestBody ApprovalDTO approvalDTO) {
         log.info("审批任务, 任务ID: {}, 审批数据: {}", taskId, approvalDTO);
 
-        leaveService.approveTask(taskId, approvalDTO.getApproved(), approvalDTO.getComment());
-
-        return Result.success("审批完成", null);
+        return leaveService.approveTask(taskId, approvalDTO.getApproved(), approvalDTO.getComment())
+                .thenReturn(Result.success("审批完成", null));
     }
 
     /**
@@ -92,12 +92,11 @@ public class LeaveController {
      * @return 流程实例信息
      */
     @GetMapping("/process/{processInstanceId}")
-    public Result<Map<String, Object>> getProcessInstanceInfo(
+    public Mono<Result<Map<String, Object>>> getProcessInstanceInfo(
             @NotBlank(message = "流程实例ID不能为空") @PathVariable String processInstanceId) {
         log.info("查询流程实例状态, 流程实例ID: {}", processInstanceId);
 
-        Map<String, Object> info = leaveService.getProcessInstanceInfo(processInstanceId);
-
-        return Result.success(info);
+        return leaveService.getProcessInstanceInfo(processInstanceId)
+                .map(Result::success);
     }
 }

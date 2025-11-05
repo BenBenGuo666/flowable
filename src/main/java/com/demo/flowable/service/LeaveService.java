@@ -11,6 +11,8 @@ import org.flowable.engine.runtime.ProcessInstance;
 import org.flowable.task.api.Task;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.util.HashMap;
 import java.util.List;
@@ -36,28 +38,30 @@ public class LeaveService {
      * @param leaveRequest 请假申请信息
      * @return 流程实例ID
      */
-    public String submitLeaveRequest(LeaveRequestDTO leaveRequest) {
-        log.info("提交请假申请, 申请人: {}, 类型: {}, 天数: {}",
-                leaveRequest.getApplicant(),
-                leaveRequest.getLeaveType(),
-                leaveRequest.getDays());
+    public Mono<String> submitLeaveRequest(LeaveRequestDTO leaveRequest) {
+        return Mono.fromCallable(() -> {
+            log.info("提交请假申请, 申请人: {}, 类型: {}, 天数: {}",
+                    leaveRequest.getApplicant(),
+                    leaveRequest.getLeaveType(),
+                    leaveRequest.getDays());
 
-        try {
-            // 准备流程变量
-            Map<String, Object> variables = buildProcessVariables(leaveRequest);
+            try {
+                // 准备流程变量
+                Map<String, Object> variables = buildProcessVariables(leaveRequest);
 
-            // 启动流程实例
-            ProcessInstance processInstance = runtimeService
-                    .startProcessInstanceByKey(FlowableConstants.LEAVE_PROCESS_KEY, variables);
+                // 启动流程实例
+                ProcessInstance processInstance = runtimeService
+                        .startProcessInstanceByKey(FlowableConstants.LEAVE_PROCESS_KEY, variables);
 
-            String processInstanceId = processInstance.getId();
-            log.info("请假流程启动成功, 流程实例ID: {}", processInstanceId);
+                String processInstanceId = processInstance.getId();
+                log.info("请假流程启动成功, 流程实例ID: {}", processInstanceId);
 
-            return processInstanceId;
-        } catch (Exception e) {
-            log.error("提交请假申请失败: {}", e.getMessage(), e);
-            throw new BusinessException("提交请假申请失败: " + e.getMessage(), e);
-        }
+                return processInstanceId;
+            } catch (Exception e) {
+                log.error("提交请假申请失败: {}", e.getMessage(), e);
+                throw new BusinessException("提交请假申请失败: " + e.getMessage(), e);
+            }
+        }).subscribeOn(Schedulers.boundedElastic());
     }
 
     /**
@@ -66,29 +70,31 @@ public class LeaveService {
      * @param assignee 任务处理人
      * @return 待办任务列表
      */
-    public List<Map<String, Object>> getTaskList(String assignee) {
-        if (!StringUtils.hasText(assignee)) {
-            throw new BusinessException("任务处理人不能为空");
-        }
+    public Mono<List<Map<String, Object>>> getTaskList(String assignee) {
+        return Mono.fromCallable(() -> {
+            if (!StringUtils.hasText(assignee)) {
+                throw new BusinessException("任务处理人不能为空");
+            }
 
-        log.info("查询待办任务, 处理人: {}", assignee);
+            log.info("查询待办任务, 处理人: {}", assignee);
 
-        try {
-            List<Task> tasks = taskService.createTaskQuery()
-                    .taskAssignee(assignee)
-                    .orderByTaskCreateTime()
-                    .desc()
-                    .list();
+            try {
+                List<Task> tasks = taskService.createTaskQuery()
+                        .taskAssignee(assignee)
+                        .orderByTaskCreateTime()
+                        .desc()
+                        .list();
 
-            log.info("查询到 {} 条待办任务", tasks.size());
+                log.info("查询到 {} 条待办任务", tasks.size());
 
-            return tasks.stream()
-                    .map(this::buildTaskInfo)
-                    .collect(Collectors.toList());
-        } catch (Exception e) {
-            log.error("查询待办任务失败: {}", e.getMessage(), e);
-            throw new BusinessException("查询待办任务失败: " + e.getMessage(), e);
-        }
+                return tasks.stream()
+                        .map(this::buildTaskInfo)
+                        .collect(Collectors.toList());
+            } catch (Exception e) {
+                log.error("查询待办任务失败: {}", e.getMessage(), e);
+                throw new BusinessException("查询待办任务失败: " + e.getMessage(), e);
+            }
+        }).subscribeOn(Schedulers.boundedElastic());
     }
 
     /**
@@ -98,38 +104,40 @@ public class LeaveService {
      * @param approved 是否批准
      * @param comment  审批意见
      */
-    public void approveTask(String taskId, boolean approved, String comment) {
-        if (!StringUtils.hasText(taskId)) {
-            throw new BusinessException("任务ID不能为空");
-        }
-
-        log.info("审批任务, 任务ID: {}, 审批结果: {}, 意见: {}", taskId, approved, comment);
-
-        try {
-            // 验证任务是否存在
-            Task task = taskService.createTaskQuery()
-                    .taskId(taskId)
-                    .singleResult();
-
-            if (task == null) {
-                throw new BusinessException("任务不存在，任务ID: " + taskId);
+    public Mono<Void> approveTask(String taskId, boolean approved, String comment) {
+        return Mono.fromRunnable(() -> {
+            if (!StringUtils.hasText(taskId)) {
+                throw new BusinessException("任务ID不能为空");
             }
 
-            // 设置审批结果
-            Map<String, Object> variables = new HashMap<>(2);
-            variables.put(FlowableConstants.VAR_APPROVED, approved);
-            variables.put(FlowableConstants.VAR_COMMENT, comment);
+            log.info("审批任务, 任务ID: {}, 审批结果: {}, 意见: {}", taskId, approved, comment);
 
-            // 完成任务
-            taskService.complete(taskId, variables);
+            try {
+                // 验证任务是否存在
+                Task task = taskService.createTaskQuery()
+                        .taskId(taskId)
+                        .singleResult();
 
-            log.info("任务审批完成, 任务ID: {}", taskId);
-        } catch (BusinessException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("审批任务失败: {}", e.getMessage(), e);
-            throw new BusinessException("审批任务失败: " + e.getMessage(), e);
-        }
+                if (task == null) {
+                    throw new BusinessException("任务不存在，任务ID: " + taskId);
+                }
+
+                // 设置审批结果
+                Map<String, Object> variables = new HashMap<>(2);
+                variables.put(FlowableConstants.VAR_APPROVED, approved);
+                variables.put(FlowableConstants.VAR_COMMENT, comment);
+
+                // 完成任务
+                taskService.complete(taskId, variables);
+
+                log.info("任务审批完成, 任务ID: {}", taskId);
+            } catch (BusinessException e) {
+                throw e;
+            } catch (Exception e) {
+                log.error("审批任务失败: {}", e.getMessage(), e);
+                throw new BusinessException("审批任务失败: " + e.getMessage(), e);
+            }
+        }).subscribeOn(Schedulers.boundedElastic()).then();
     }
 
     /**
@@ -138,38 +146,40 @@ public class LeaveService {
      * @param processInstanceId 流程实例ID
      * @return 流程实例信息
      */
-    public Map<String, Object> getProcessInstanceInfo(String processInstanceId) {
-        if (!StringUtils.hasText(processInstanceId)) {
-            throw new BusinessException("流程实例ID不能为空");
-        }
-
-        log.info("查询流程实例信息, 流程实例ID: {}", processInstanceId);
-
-        try {
-            ProcessInstance processInstance = runtimeService.createProcessInstanceQuery()
-                    .processInstanceId(processInstanceId)
-                    .singleResult();
-
-            Map<String, Object> info = new HashMap<>(4);
-            info.put("processInstanceId", processInstanceId);
-
-            if (processInstance != null) {
-                info.put("processDefinitionId", processInstance.getProcessDefinitionId());
-                info.put("isEnded", false);
-                info.put("isActive", true);
-                log.info("流程实例运行中: {}", processInstanceId);
-            } else {
-                // 流程已结束
-                info.put("isEnded", true);
-                info.put("isActive", false);
-                log.info("流程实例已结束: {}", processInstanceId);
+    public Mono<Map<String, Object>> getProcessInstanceInfo(String processInstanceId) {
+        return Mono.fromCallable(() -> {
+            if (!StringUtils.hasText(processInstanceId)) {
+                throw new BusinessException("流程实例ID不能为空");
             }
 
-            return info;
-        } catch (Exception e) {
-            log.error("查询流程实例信息失败: {}", e.getMessage(), e);
-            throw new BusinessException("查询流程实例信息失败: " + e.getMessage(), e);
-        }
+            log.info("查询流程实例信息, 流程实例ID: {}", processInstanceId);
+
+            try {
+                ProcessInstance processInstance = runtimeService.createProcessInstanceQuery()
+                        .processInstanceId(processInstanceId)
+                        .singleResult();
+
+                Map<String, Object> info = new HashMap<>(4);
+                info.put("processInstanceId", processInstanceId);
+
+                if (processInstance != null) {
+                    info.put("processDefinitionId", processInstance.getProcessDefinitionId());
+                    info.put("isEnded", false);
+                    info.put("isActive", true);
+                    log.info("流程实例运行中: {}", processInstanceId);
+                } else {
+                    // 流程已结束
+                    info.put("isEnded", true);
+                    info.put("isActive", false);
+                    log.info("流程实例已结束: {}", processInstanceId);
+                }
+
+                return info;
+            } catch (Exception e) {
+                log.error("查询流程实例信息失败: {}", e.getMessage(), e);
+                throw new BusinessException("查询流程实例信息失败: " + e.getMessage(), e);
+            }
+        }).subscribeOn(Schedulers.boundedElastic());
     }
 
     /**

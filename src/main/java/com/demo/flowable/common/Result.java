@@ -56,6 +56,13 @@ public class Result<T> {
     }
 
     /**
+     * 成功响应（自定义消息，无数据）
+     */
+    public static <T> Result<T> success(String message) {
+        return new Result<>(ResultCode.SUCCESS.getCode(), message, null);
+    }
+
+    /**
      * 成功响应（自定义消息和数据）
      */
     public static <T> Result<T> success(String message, T data) {
