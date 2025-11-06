@@ -2,6 +2,12 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 const routes = [
   {
+    path: '/login',
+    name: 'Login',
+    component: () => import('../views/Login.vue'),
+    meta: { title: '登录', noAuth: true }
+  },
+  {
     path: '/',
     name: 'Home',
     component: () => import('../views/Home.vue'),
@@ -87,6 +93,31 @@ const routes = [
         meta: { title: '我的任务' }
       }
     ]
+  },
+  {
+    path: '/identity',
+    name: 'Identity',
+    redirect: '/identity/users',
+    children: [
+      {
+        path: 'users',
+        name: 'UserManagement',
+        component: () => import('../views/identity/UserManagement.vue'),
+        meta: { title: '用户管理' }
+      },
+      {
+        path: 'roles',
+        name: 'RoleManagement',
+        component: () => import('../views/identity/RoleManagement.vue'),
+        meta: { title: '角色管理' }
+      },
+      {
+        path: 'permissions',
+        name: 'PermissionManagement',
+        component: () => import('../views/identity/PermissionManagement.vue'),
+        meta: { title: '权限管理' }
+      }
+    ]
   }
 ]
 
@@ -95,12 +126,26 @@ const router = createRouter({
   routes
 })
 
-// 路由守卫 - 设置页面标题
+// 路由守卫 - 设置页面标题和登录验证
 router.beforeEach((to, from, next) => {
+  // 设置页面标题
   if (to.meta.title) {
     document.title = `${to.meta.title} - Flowable 工作流`
   }
-  next()
+
+  // 登录验证
+  const token = localStorage.getItem('token')
+  const isLoginPage = to.path === '/login'
+
+  if (!token && !to.meta.noAuth && !isLoginPage) {
+    // 未登录且不是免登录页面，跳转到登录页
+    next('/login')
+  } else if (token && isLoginPage) {
+    // 已登录访问登录页，跳转到首页
+    next('/')
+  } else {
+    next()
+  }
 })
 
 export default router

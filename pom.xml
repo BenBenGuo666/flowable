@@ -28,6 +28,8 @@
         <druid.version>1.2.23</druid.version>
         <h2.version>2.2.224</h2.version>
         <lombok.version>1.18.32</lombok.version>
+        <jjwt.version>0.12.5</jjwt.version>
+        <mybatis-plus.version>3.5.5</mybatis-plus.version>
     </properties>
     <dependencies>
 
@@ -78,6 +80,47 @@
             <version>${lombok.version}</version>
             <scope>provided</scope>
         </dependency>
+
+        <!-- MyBatis Plus -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
+            <version>${mybatis-plus.version}</version>
+        </dependency>
+
+        <!-- Spring Security -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
+        <!-- JWT -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+            <version>${jjwt.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <version>${jjwt.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <version>${jjwt.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- Flowable DMN Engine - 先注释掉，等需要时再启用 -->
+        <!--
+        <dependency>
+            <groupId>org.flowable</groupId>
+            <artifactId>flowable-dmn-engine</artifactId>
+            <version>${flowable.version}</version>
+        </dependency>
+        -->
 
         <dependency>
             <groupId>org.springframework.boot</groupId>

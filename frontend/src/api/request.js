@@ -2,8 +2,10 @@ import axios from 'axios'
 
 // 创建 axios 实例
 const request = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080',
-  timeout: 10000,
+  // 开发环境使用相对路径，通过 Vite 代理转发到后端
+  // 生产环境可通过环境变量配置
+  baseURL: import.meta.env.VITE_API_BASE_URL || '',
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json'
   }

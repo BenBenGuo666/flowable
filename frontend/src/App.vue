@@ -3,7 +3,17 @@
     <n-message-provider>
       <n-dialog-provider>
         <n-notification-provider>
-          <n-layout class="app-layout">
+          <!-- 登录页：无布局，全屏显示 -->
+          <template v-if="isLoginPage">
+            <router-view v-slot="{ Component }">
+              <transition name="fade" mode="out-in">
+                <component :is="Component" />
+              </transition>
+            </router-view>
+          </template>
+
+          <!-- 其他页面：显示完整布局 -->
+          <n-layout v-else class="app-layout">
             <!-- 顶部导航栏 -->
             <n-layout-header class="app-header glass-effect" bordered>
               <div class="header-content">
@@ -58,13 +68,18 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { appleTheme } from './config/theme'
 
 const router = useRouter()
 const route = useRoute()
 const activeKey = ref('home')
+
+// 判断是否是登录页
+const isLoginPage = computed(() => {
+  return route.path === '/login' || route.meta.noAuth
+})
 
 // 主题覆盖配置
 const themeOverrides = appleTheme
@@ -192,6 +207,7 @@ const handleMenuUpdate = (key, item) => {
 
 <style scoped>
 .app-layout {
+  width: 100%;
   height: 100vh;
   overflow: hidden;
 }
