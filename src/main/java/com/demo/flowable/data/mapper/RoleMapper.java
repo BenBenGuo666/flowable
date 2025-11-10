@@ -1,7 +1,7 @@
-package com.demo.flowable.mapper;
+package com.demo.flowable.data.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.demo.flowable.entity.Role;
+import com.demo.flowable.data.entity.Role;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
 

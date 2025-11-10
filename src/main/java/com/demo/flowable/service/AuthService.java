@@ -1,10 +1,13 @@
 package com.demo.flowable.service;
 
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.demo.flowable.data.constants.DataConstants;
+import com.demo.flowable.data.entity.User;
+import com.demo.flowable.data.mapper.UserMapper;
+import com.demo.flowable.data.service.UserDataService;
 import com.demo.flowable.dto.LoginRequest;
 import com.demo.flowable.dto.LoginResponse;
 import com.demo.flowable.dto.UserDTO;
-import com.demo.flowable.entity.User;
-import com.demo.flowable.mapper.UserMapper;
 import com.demo.flowable.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +30,14 @@ public class AuthService {
     private final UserMapper userMapper;
     private final JwtUtil jwtUtil;
     private final PasswordEncoder passwordEncoder;
+
+    private final UserDataService userDataService;
+
+    public User findByUsername(String username) {
+        return userDataService.getOne(Wrappers.<User>lambdaQuery()
+                .eq(User::getUsername, username)
+                .last(DataConstants.SQL_LAST_LIMIT));
+    }
 
     /**
      * 用户登录

@@ -1,4 +1,4 @@
-package com.demo.flowable.entity;
+package com.demo.flowable.data.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
@@ -6,11 +6,11 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * 角色权限关联实体
+ * 用户角色关联实体
  */
 @Data
-@TableName("sys_role_permission")
-public class RolePermission {
+@TableName("sys_user_role")
+public class UserRole {
 
     /**
      * 主键ID
@@ -19,14 +19,14 @@ public class RolePermission {
     private Long id;
 
     /**
+     * 用户ID
+     */
+    private Long userId;
+
+    /**
      * 角色ID
      */
     private Long roleId;
-
-    /**
-     * 权限ID
-     */
-    private Long permissionId;
 
     /**
      * 创建时间

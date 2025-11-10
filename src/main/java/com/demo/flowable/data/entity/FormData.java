@@ -1,4 +1,4 @@
-package com.demo.flowable.entity;
+package com.demo.flowable.data.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
 import lombok.AllArgsConstructor;

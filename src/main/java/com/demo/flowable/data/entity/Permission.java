@@ -1,4 +1,4 @@
-package com.demo.flowable.entity;
+package com.demo.flowable.data.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
@@ -6,11 +6,11 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * 系统用户实体
+ * 系统权限实体
  */
 @Data
-@TableName("sys_user")
-public class User {
+@TableName("sys_permission")
+public class Permission {
 
     /**
      * 主键ID
@@ -19,60 +19,45 @@ public class User {
     private Long id;
 
     /**
-     * 用户名
+     * 权限编码
      */
-    private String username;
+    private String permissionCode;
 
     /**
-     * 密码（BCrypt加密）
+     * 权限名称
      */
-    private String password;
+    private String permissionName;
 
     /**
-     * 真实姓名
+     * 权限类型：menu-菜单，button-按钮，api-接口
      */
-    private String realName;
+    private String permissionType;
 
     /**
-     * 邮箱
+     * 父级权限ID
      */
-    private String email;
+    private Long parentId;
 
     /**
-     * 手机号
+     * 路由路径
      */
-    private String phone;
+    private String path;
 
     /**
-     * 头像URL
+     * 图标
      */
-    private String avatar;
+    private String icon;
 
     /**
-     * 状态：0-禁用，1-启用
+     * 排序
      */
-    private Integer status;
-
-    /**
-     * 租户ID
-     */
-    private String tenantId;
-
-    /**
-     * 创建人
-     */
-    private String createdBy;
+    private Integer sortOrder;
 
     /**
      * 创建时间
      */
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdTime;
-
-    /**
-     * 更新人
-     */
-    private String updatedBy;
 
     /**
      * 更新时间

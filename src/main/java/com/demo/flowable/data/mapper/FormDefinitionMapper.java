@@ -1,9 +1,9 @@
-package com.demo.flowable.mapper;
+package com.demo.flowable.data.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.demo.flowable.entity.FormDefinition;
+import com.demo.flowable.data.entity.FormDefinition;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
