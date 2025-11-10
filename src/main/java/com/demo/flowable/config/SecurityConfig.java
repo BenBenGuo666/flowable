@@ -43,7 +43,7 @@ public class SecurityConfig {
                 // 配置授权规则
                 .authorizeExchange(exchanges -> exchanges
                         // 允许登录接口匿名访问
-                        .pathMatchers("/auth/login", "/auth/register").permitAll()
+                        .pathMatchers("/api/auth/login", "/auth/register").permitAll()
                         // 允许访问数据库初始化接口（仅开发环境）
                         .pathMatchers("/init/**").permitAll()
                         // 允许 Flowable 相关接口（暂时）

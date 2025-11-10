@@ -161,10 +161,11 @@ const handleLogin = async () => {
       username: formData.username,
       password: formData.password
     })
-
+    alert(response)
     // 保存 token 到 localStorage
-    if (response.token) {
-      localStorage.setItem('token', response.token)
+    if (response?.data?.token) {
+      alert(response?.data?.token)
+      localStorage.setItem('token', response.data.token)
 
       // 如果选择记住我，保存用户信息
       if (formData.rememberMe) {
@@ -173,7 +174,6 @@ const handleLogin = async () => {
           userId: response.userId
         }))
       }
-
       // 显示成功消息
       message.success('登录成功！')
 
@@ -182,6 +182,7 @@ const handleLogin = async () => {
         router.push('/dashboard')
       }, 500)
     } else {
+      alert('登录失败，未返回有效令牌')
       message.error('登录失败，未返回有效令牌')
     }
   } catch (error) {
