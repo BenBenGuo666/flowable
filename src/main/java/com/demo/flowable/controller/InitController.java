@@ -17,7 +17,7 @@ import java.sql.Connection;
  */
 @Slf4j
 @RestController
-@RequestMapping("/init")
+@RequestMapping("/api/init")
 public class InitController {
 
     @Autowired

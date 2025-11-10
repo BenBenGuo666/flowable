@@ -5,7 +5,7 @@ import request from './request'
  */
 export function getRoleList(params) {
   return request({
-    url: '/role/list',
+    url: '/api/role/list',
     method: 'get',
     params
   })
@@ -16,7 +16,7 @@ export function getRoleList(params) {
  */
 export function getRoleById(id) {
   return request({
-    url: `/role/${id}`,
+    url: `/api/role/${id}`,
     method: 'get'
   })
 }
@@ -26,7 +26,7 @@ export function getRoleById(id) {
  */
 export function createRole(data) {
   return request({
-    url: '/role',
+    url: '/api/role',
     method: 'post',
     data
   })
@@ -37,7 +37,7 @@ export function createRole(data) {
  */
 export function updateRole(id, data) {
   return request({
-    url: `/role/${id}`,
+    url: `/api/role/${id}`,
     method: 'put',
     data
   })
@@ -48,7 +48,7 @@ export function updateRole(id, data) {
  */
 export function deleteRole(id) {
   return request({
-    url: `/role/${id}`,
+    url: `/api/role/${id}`,
     method: 'delete'
   })
 }
@@ -58,7 +58,7 @@ export function deleteRole(id) {
  */
 export function assignRolePermissions(id, permissionIds) {
   return request({
-    url: `/role/${id}/permissions`,
+    url: `/api/role/${id}/permissions`,
     method: 'post',
     data: permissionIds
   })

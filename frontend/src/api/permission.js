@@ -5,7 +5,7 @@ import request from './request'
  */
 export function getPermissionList(params) {
   return request({
-    url: '/permission/list',
+    url: '/api/permission/list',
     method: 'get',
     params
   })
@@ -16,7 +16,7 @@ export function getPermissionList(params) {
  */
 export function getPermissionTree() {
   return request({
-    url: '/permission/tree',
+    url: '/api/permission/tree',
     method: 'get'
   })
 }
@@ -26,7 +26,7 @@ export function getPermissionTree() {
  */
 export function getPermissionById(id) {
   return request({
-    url: `/permission/${id}`,
+    url: `/api/permission/${id}`,
     method: 'get'
   })
 }
@@ -36,7 +36,7 @@ export function getPermissionById(id) {
  */
 export function createPermission(data) {
   return request({
-    url: '/permission',
+    url: '/api/permission',
     method: 'post',
     data
   })
@@ -47,7 +47,7 @@ export function createPermission(data) {
  */
 export function updatePermission(id, data) {
   return request({
-    url: `/permission/${id}`,
+    url: `/api/permission/${id}`,
     method: 'put',
     data
   })
@@ -58,7 +58,7 @@ export function updatePermission(id, data) {
  */
 export function deletePermission(id) {
   return request({
-    url: `/permission/${id}`,
+    url: `/api/permission/${id}`,
     method: 'delete'
   })
 }

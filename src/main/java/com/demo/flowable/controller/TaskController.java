@@ -13,7 +13,7 @@ import java.util.Map;
  * 通用任务控制器
  */
 @RestController
-@RequestMapping("/task")
+@RequestMapping("/api/task")
 public class TaskController {
 
     private final TaskService taskService;

@@ -11,7 +11,7 @@ import java.util.List;
  * 流程模板控制器
  */
 @RestController
-@RequestMapping("/process-template")
+@RequestMapping("/api/process-template")
 public class ProcessTemplateController {
 
     private final ProcessTemplateService processTemplateService;

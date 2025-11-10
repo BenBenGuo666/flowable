@@ -42,13 +42,19 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 // 配置授权规则
                 .authorizeExchange(exchanges -> exchanges
-                        // 允许登录接口匿名访问
-                        .pathMatchers("/api/auth/login", "/auth/register").permitAll()
+                        // 允许登录注册接口匿名访问
+                        .pathMatchers("/api/auth/login", "/api/auth/register").permitAll()
                         // 允许访问数据库初始化接口（仅开发环境）
                         .pathMatchers("/init/**").permitAll()
-                        // 允许 Flowable 相关接口（暂时）
+                        // 允许 Flowable 流程相关接口（暂时）
                         .pathMatchers("/process-definition/**", "/process-instance/**",
-                                "/task/**", "/leave/**", "/process-template/**").permitAll()
+                                "/task/**", "/process-template/**").permitAll()
+                        // 允许表单相关接口（暂时）
+                        .pathMatchers("/api/form-definition/**", "/api/form-data/**").permitAll()
+                        // 允许请假相关接口（暂时）
+                        .pathMatchers("/api/leave/**").permitAll()
+                        // 允许用户角色权限接口（暂时）
+                        .pathMatchers("/api/user/**", "/api/role/**", "/api/permission/**").permitAll()
                         // 其他请求需要认证
                         .anyExchange().authenticated()
                 )
@@ -61,7 +67,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173", "http://localhost:3000"));
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173", "http://localhost:5174", "http://localhost:3000"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);

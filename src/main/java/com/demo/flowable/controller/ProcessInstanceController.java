@@ -11,7 +11,7 @@ import java.util.List;
  * 流程实例监控控制器
  */
 @RestController
-@RequestMapping("/process-instance")
+@RequestMapping("/api/process-instance")
 public class ProcessInstanceController {
 
     private final ProcessInstanceService processInstanceService;

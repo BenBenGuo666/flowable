@@ -118,6 +118,25 @@ const routes = [
         meta: { title: '权限管理' }
       }
     ]
+  },
+  {
+    path: '/form',
+    name: 'Form',
+    redirect: '/form/management',
+    children: [
+      {
+        path: 'management',
+        name: 'FormManagement',
+        component: () => import('../views/form/FormManagement.vue'),
+        meta: { title: '表单管理' }
+      },
+      {
+        path: 'designer/:id?',
+        name: 'FormDesigner',
+        component: () => import('../views/form/FormDesigner.vue'),
+        meta: { title: '表单设计器' }
+      }
+    ]
   }
 ]
 

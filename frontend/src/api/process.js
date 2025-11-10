@@ -7,7 +7,7 @@ import request from './request'
  */
 export function getProcessDefinitions() {
   return request({
-    url: '/process-definition/list',
+    url: '/api/process-definition/list',
     method: 'get'
   })
 }
@@ -17,7 +17,7 @@ export function getProcessDefinitions() {
  */
 export function getProcessDefinitionById(id) {
   return request({
-    url: `/process-definition/${id}`,
+    url: `/api/process-definition/${id}`,
     method: 'get'
   })
 }
@@ -27,7 +27,7 @@ export function getProcessDefinitionById(id) {
  */
 export function getProcessDefinitionXml(id) {
   return request({
-    url: `/process-definition/${id}/xml`,
+    url: `/api/process-definition/${id}/xml`,
     method: 'get'
   })
 }
@@ -37,7 +37,7 @@ export function getProcessDefinitionXml(id) {
  */
 export function deployProcessDefinition(data) {
   return request({
-    url: '/process-definition/deploy',
+    url: '/api/process-definition/deploy',
     method: 'post',
     data
   })
@@ -48,7 +48,7 @@ export function deployProcessDefinition(data) {
  */
 export function uploadBpmnFile(formData) {
   return request({
-    url: '/process-definition/upload',
+    url: '/api/process-definition/upload',
     method: 'post',
     data: formData,
     headers: {
@@ -62,7 +62,7 @@ export function uploadBpmnFile(formData) {
  */
 export function deleteProcessDefinition(deploymentId, cascade = false) {
   return request({
-    url: `/process-definition/${deploymentId}`,
+    url: `/api/process-definition/${deploymentId}`,
     method: 'delete',
     params: { cascade }
   })
@@ -73,7 +73,7 @@ export function deleteProcessDefinition(deploymentId, cascade = false) {
  */
 export function activateProcessDefinition(id) {
   return request({
-    url: `/process-definition/${id}/activate`,
+    url: `/api/process-definition/${id}/activate`,
     method: 'put'
   })
 }
@@ -83,7 +83,7 @@ export function activateProcessDefinition(id) {
  */
 export function suspendProcessDefinition(id) {
   return request({
-    url: `/process-definition/${id}/suspend`,
+    url: `/api/process-definition/${id}/suspend`,
     method: 'put'
   })
 }
@@ -95,7 +95,7 @@ export function suspendProcessDefinition(id) {
  */
 export function getRunningProcessInstances() {
   return request({
-    url: '/process-instance/running',
+    url: '/api/process-instance/running',
     method: 'get'
   })
 }
@@ -105,7 +105,7 @@ export function getRunningProcessInstances() {
  */
 export function getAllProcessInstances() {
   return request({
-    url: '/process-instance/all',
+    url: '/api/process-instance/all',
     method: 'get'
   })
 }
@@ -115,7 +115,7 @@ export function getAllProcessInstances() {
  */
 export function getProcessInstanceById(id) {
   return request({
-    url: `/process-instance/${id}`,
+    url: `/api/process-instance/${id}`,
     method: 'get'
   })
 }
@@ -125,7 +125,7 @@ export function getProcessInstanceById(id) {
  */
 export function suspendProcessInstance(id) {
   return request({
-    url: `/process-instance/${id}/suspend`,
+    url: `/api/process-instance/${id}/suspend`,
     method: 'put'
   })
 }
@@ -135,7 +135,7 @@ export function suspendProcessInstance(id) {
  */
 export function activateProcessInstance(id) {
   return request({
-    url: `/process-instance/${id}/activate`,
+    url: `/api/process-instance/${id}/activate`,
     method: 'put'
   })
 }
@@ -145,7 +145,7 @@ export function activateProcessInstance(id) {
  */
 export function deleteProcessInstance(id, reason) {
   return request({
-    url: `/process-instance/${id}`,
+    url: `/api/process-instance/${id}`,
     method: 'delete',
     params: { reason }
   })
@@ -158,7 +158,7 @@ export function deleteProcessInstance(id, reason) {
  */
 export function getAllTemplates() {
   return request({
-    url: '/process-template/list',
+    url: '/api/process-template/list',
     method: 'get'
   })
 }
@@ -168,7 +168,7 @@ export function getAllTemplates() {
  */
 export function getTemplateById(id) {
   return request({
-    url: `/process-template/${id}`,
+    url: `/api/process-template/${id}`,
     method: 'get'
   })
 }

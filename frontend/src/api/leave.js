@@ -9,7 +9,7 @@ import request from './request'
  */
 export function applyLeave(data) {
   return request({
-    url: '/leave/apply',
+    url: '/api/leave/apply',
     method: 'post',
     data
   })
@@ -22,7 +22,7 @@ export function applyLeave(data) {
  */
 export function getMyLeaveList(params) {
   return request({
-    url: '/leave/my-list',
+    url: '/api/leave/my-list',
     method: 'get',
     params
   })
@@ -35,7 +35,7 @@ export function getMyLeaveList(params) {
  */
 export function getPendingLeaveList(params) {
   return request({
-    url: '/leave/pending-list',
+    url: '/api/leave/pending-list',
     method: 'get',
     params
   })
@@ -49,7 +49,7 @@ export function getPendingLeaveList(params) {
  */
 export function approveLeave(taskId, data) {
   return request({
-    url: `/leave/approve/${taskId}`,
+    url: `/api/leave/approve/${taskId}`,
     method: 'post',
     data
   })
@@ -63,7 +63,7 @@ export function approveLeave(taskId, data) {
  */
 export function rejectLeave(taskId, data) {
   return request({
-    url: `/leave/reject/${taskId}`,
+    url: `/api/leave/reject/${taskId}`,
     method: 'post',
     data
   })
@@ -76,7 +76,7 @@ export function rejectLeave(taskId, data) {
  */
 export function getLeaveDetail(id) {
   return request({
-    url: `/leave/detail/${id}`,
+    url: `/api/leave/detail/${id}`,
     method: 'get'
   })
 }
@@ -88,7 +88,7 @@ export function getLeaveDetail(id) {
  */
 export function getProcessDiagram(processInstanceId) {
   return request({
-    url: `/leave/process-diagram/${processInstanceId}`,
+    url: `/api/leave/process-diagram/${processInstanceId}`,
     method: 'get',
     responseType: 'blob' // 返回图片
   })
@@ -100,7 +100,7 @@ export function getProcessDiagram(processInstanceId) {
  */
 export function getLeaveStatistics() {
   return request({
-    url: '/leave/statistics',
+    url: '/api/leave/statistics',
     method: 'get'
   })
 }

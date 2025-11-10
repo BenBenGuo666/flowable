@@ -15,7 +15,7 @@ import java.util.List;
  * 流程定义管理控制器
  */
 @RestController
-@RequestMapping("/process-definition")
+@RequestMapping("/api/process-definition")
 public class ProcessDefinitionController {
 
     private final ProcessDefinitionService processDefinitionService;

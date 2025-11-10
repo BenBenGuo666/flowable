@@ -7,7 +7,7 @@ import request from './request'
  */
 export function getMyPendingTasks(userId = 'user1') {
   return request({
-    url: '/task/pending',
+    url: '/api/task/pending',
     method: 'get',
     params: { userId }
   })
@@ -18,7 +18,7 @@ export function getMyPendingTasks(userId = 'user1') {
  */
 export function getMyCompletedTasks(userId = 'user1') {
   return request({
-    url: '/task/completed',
+    url: '/api/task/completed',
     method: 'get',
     params: { userId }
   })
@@ -29,7 +29,7 @@ export function getMyCompletedTasks(userId = 'user1') {
  */
 export function getCandidateTasks(userId = 'user1') {
   return request({
-    url: '/task/candidate',
+    url: '/api/task/candidate',
     method: 'get',
     params: { userId }
   })
@@ -40,7 +40,7 @@ export function getCandidateTasks(userId = 'user1') {
  */
 export function getTaskById(taskId) {
   return request({
-    url: `/task/${taskId}`,
+    url: `/api/task/${taskId}`,
     method: 'get'
   })
 }
@@ -50,7 +50,7 @@ export function getTaskById(taskId) {
  */
 export function completeTask(taskId, data) {
   return request({
-    url: `/task/${taskId}/complete`,
+    url: `/api/task/${taskId}/complete`,
     method: 'post',
     data
   })
@@ -61,7 +61,7 @@ export function completeTask(taskId, data) {
  */
 export function rejectTask(taskId, data) {
   return request({
-    url: `/task/${taskId}/reject`,
+    url: `/api/task/${taskId}/reject`,
     method: 'post',
     data
   })
@@ -72,7 +72,7 @@ export function rejectTask(taskId, data) {
  */
 export function transferTask(taskId, targetUserId) {
   return request({
-    url: `/task/${taskId}/transfer`,
+    url: `/api/task/${taskId}/transfer`,
     method: 'post',
     params: { targetUserId }
   })
@@ -83,7 +83,7 @@ export function transferTask(taskId, targetUserId) {
  */
 export function delegateTask(taskId, delegateUserId) {
   return request({
-    url: `/task/${taskId}/delegate`,
+    url: `/api/task/${taskId}/delegate`,
     method: 'post',
     params: { delegateUserId }
   })
@@ -94,7 +94,7 @@ export function delegateTask(taskId, delegateUserId) {
  */
 export function claimTask(taskId, userId) {
   return request({
-    url: `/task/${taskId}/claim`,
+    url: `/api/task/${taskId}/claim`,
     method: 'post',
     params: { userId }
   })
@@ -105,7 +105,7 @@ export function claimTask(taskId, userId) {
  */
 export function getTaskVariables(taskId) {
   return request({
-    url: `/task/${taskId}/variables`,
+    url: `/api/task/${taskId}/variables`,
     method: 'get'
   })
 }
@@ -115,7 +115,7 @@ export function getTaskVariables(taskId) {
  */
 export function setTaskVariables(taskId, variables) {
   return request({
-    url: `/task/${taskId}/variables`,
+    url: `/api/task/${taskId}/variables`,
     method: 'put',
     data: variables
   })

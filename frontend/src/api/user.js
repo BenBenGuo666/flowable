@@ -5,7 +5,7 @@ import request from './request'
  */
 export function getUserList(params) {
   return request({
-    url: '/user/list',
+    url: '/api/user/list',
     method: 'get',
     params
   })
@@ -16,7 +16,7 @@ export function getUserList(params) {
  */
 export function getUserById(id) {
   return request({
-    url: `/user/${id}`,
+    url: `/api/user/${id}`,
     method: 'get'
   })
 }
@@ -26,7 +26,7 @@ export function getUserById(id) {
  */
 export function createUser(data) {
   return request({
-    url: '/user',
+    url: '/api/user',
     method: 'post',
     data
   })
@@ -37,7 +37,7 @@ export function createUser(data) {
  */
 export function updateUser(id, data) {
   return request({
-    url: `/user/${id}`,
+    url: `/api/user/${id}`,
     method: 'put',
     data
   })
@@ -48,7 +48,7 @@ export function updateUser(id, data) {
  */
 export function deleteUser(id) {
   return request({
-    url: `/user/${id}`,
+    url: `/api/user/${id}`,
     method: 'delete'
   })
 }
@@ -58,7 +58,7 @@ export function deleteUser(id) {
  */
 export function assignUserRoles(id, roleIds) {
   return request({
-    url: `/user/${id}/roles`,
+    url: `/api/user/${id}/roles`,
     method: 'post',
     data: roleIds
   })
