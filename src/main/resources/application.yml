@@ -47,13 +47,24 @@ mybatis-plus:
       logic-delete-value: 1
       logic-not-delete-value: 0
 
-# JWT 配置
+# JWT 配置（OAuth 2.0）
 jwt:
   secret: flowable-secret-key-for-jwt-token-generation-must-be-at-least-256-bits
-  expiration: 86400000  # 24小时（毫秒）
+  access-token-expiration: 3600000      # Access Token 有效期：1小时（毫秒）
+  refresh-token-expiration: 604800000   # Refresh Token 有效期：7天（毫秒）
+  issuer: flowable-auth-server          # JWT 签发者
+
+# Token 黑名单配置
+token:
+  blacklist:
+    enabled: true
+    cleanup-interval: 3600000  # 清理间隔：1小时（毫秒）
 
 # 日志配置
 logging:
   level:
     com.demo.flowable: DEBUG
     com.demo.flowable.mapper: DEBUG
+    com.demo.flowable.common.filter: DEBUG  # 请求/响应日志过滤器
+  pattern:
+    console: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n'  # 控制台日志格式

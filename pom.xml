@@ -28,7 +28,7 @@
         <mysql.version>8.0.33</mysql.version>
         <druid.version>1.2.23</druid.version>
         <h2.version>2.2.224</h2.version>
-        <r2dbc-mssql.version>1.0.2.RELEASE</r2dbc-mssql.version>
+        <r2dbc-mysql.version>1.0.6</r2dbc-mysql.version>
         <lombok.version>1.18.32</lombok.version>
         <jjwt.version>0.12.5</jjwt.version>
         <mybatis-plus.version>3.5.5</mybatis-plus.version>
@@ -97,6 +97,12 @@
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
 
+        <!-- Spring Security OAuth 2.0 Resource Server -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+        </dependency>
+
         <!-- JWT -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
@@ -136,16 +142,16 @@
             <artifactId>spring-boot-starter-data-r2dbc</artifactId>
         </dependency>
 
+        <!-- R2DBC MySQL 驱动 -->
         <dependency>
-            <groupId>io.r2dbc</groupId>
-            <artifactId>r2dbc-mssql</artifactId>
-            <version>${r2dbc-mssql.version}</version>
+            <groupId>io.asyncer</groupId>
+            <artifactId>r2dbc-mysql</artifactId>
         </dependency>
 
+        <!-- R2DBC 连接池 -->
         <dependency>
             <groupId>io.r2dbc</groupId>
             <artifactId>r2dbc-pool</artifactId>
-            <version>${r2dbc-mssql.version}</version>
         </dependency>
 
 

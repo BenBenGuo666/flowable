@@ -161,12 +161,10 @@ const handleLogin = async () => {
       username: formData.username,
       password: formData.password
     })
-    alert(response)
     // 保存 token 到 localStorage
-    if (response?.data?.token) {
-      alert(response?.data?.token)
-      localStorage.setItem('token', response.data.token)
-
+    if (response?.access_token) {
+      localStorage.setItem('token', response.access_token)
+      localStorage.setItem('refresh_token', response.refresh_token)
       // 如果选择记住我，保存用户信息
       if (formData.rememberMe) {
         localStorage.setItem('userInfo', JSON.stringify({

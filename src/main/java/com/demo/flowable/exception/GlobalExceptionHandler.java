@@ -1,85 +1,125 @@
 package com.demo.flowable.exception;
 
-import com.demo.flowable.common.Result;
-import com.demo.flowable.common.ResultCode;
+import com.demo.flowable.dto.ErrorResponse;
+import io.jsonwebtoken.JwtException;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.validation.BindException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.validation.FieldError;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.bind.support.WebExchangeBindException;
+import reactor.core.publisher.Mono;
 
-import jakarta.validation.ConstraintViolation;
-import jakarta.validation.ConstraintViolationException;
-import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
- * @author: e-Benben.Guo
- * @date: 2025/11
- * @desc: 全局异常处理器
+ * 全局异常处理器（响应式）
+ * 处理认证、授权、JWT 相关异常
+ *
+ * @author e-Benben.Guo
+ * @date 2025/11
  */
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     /**
-     * 处理业务异常
+     * 处理认证异常
      */
-    @ExceptionHandler(BusinessException.class)
-    public Result<Void> handleBusinessException(BusinessException e) {
-        log.error("业务异常: {}", e.getMessage(), e);
-        return Result.error(e.getCode(), e.getMessage());
+    @ExceptionHandler(AuthenticationException.class)
+    public Mono<ResponseEntity<ErrorResponse>> handleAuthenticationException(AuthenticationException e) {
+        log.error("认证失败: {}", e.getMessage());
+
+        ErrorResponse errorResponse;
+        if (e instanceof BadCredentialsException) {
+            errorResponse = ErrorResponse.invalidGrant("用户名或密码错误");
+        } else if (e instanceof UsernameNotFoundException) {
+            errorResponse = ErrorResponse.invalidGrant("用户不存在");
+        } else {
+            errorResponse = ErrorResponse.invalidGrant("认证失败: " + e.getMessage());
+        }
+
+        return Mono.just(ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse));
     }
 
     /**
-     * 处理参数校验异常（@RequestBody）
+     * 处理访问拒绝异常（权限不足）
      */
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public Result<Void> handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
-        log.error("参数校验异常: {}", e.getMessage());
-        FieldError fieldError = e.getBindingResult().getFieldError();
-        String message = fieldError != null ? fieldError.getDefaultMessage() : "参数校验失败";
-        return Result.error(ResultCode.PARAM_ERROR.getCode(), message);
+    @ExceptionHandler(AccessDeniedException.class)
+    public Mono<ResponseEntity<ErrorResponse>> handleAccessDeniedException(AccessDeniedException e) {
+        log.error("访问拒绝: {}", e.getMessage());
+
+        ErrorResponse errorResponse = ErrorResponse.of(
+                "access_denied",
+                "权限不足: " + e.getMessage()
+        );
+
+        return Mono.just(ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse));
     }
 
     /**
-     * 处理参数绑定异常（@ModelAttribute）
+     * 处理 JWT 异常
      */
-    @ExceptionHandler(BindException.class)
-    public Result<Void> handleBindException(BindException e) {
-        log.error("参数绑定异常: {}", e.getMessage());
-        FieldError fieldError = e.getBindingResult().getFieldError();
-        String message = fieldError != null ? fieldError.getDefaultMessage() : "参数绑定失败";
-        return Result.error(ResultCode.PARAM_ERROR.getCode(), message);
+    @ExceptionHandler(JwtException.class)
+    public Mono<ResponseEntity<ErrorResponse>> handleJwtException(JwtException e) {
+        log.error("JWT 验证失败: {}", e.getMessage());
+
+        ErrorResponse errorResponse = ErrorResponse.invalidToken("Token 无效: " + e.getMessage());
+
+        return Mono.just(ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse));
     }
 
     /**
-     * 处理约束校验异常（@RequestParam）
+     * 处理参数校验异常
      */
-    @ExceptionHandler(ConstraintViolationException.class)
-    public Result<Void> handleConstraintViolationException(ConstraintViolationException e) {
-        log.error("约束校验异常: {}", e.getMessage());
-        Set<ConstraintViolation<?>> violations = e.getConstraintViolations();
-        String message = violations.isEmpty() ? "参数校验失败" :
-                         violations.iterator().next().getMessage();
-        return Result.error(ResultCode.PARAM_ERROR.getCode(), message);
+    @ExceptionHandler(WebExchangeBindException.class)
+    public Mono<ResponseEntity<ErrorResponse>> handleValidationException(WebExchangeBindException e) {
+        log.error("参数校验失败: {}", e.getMessage());
+
+        // 收集所有字段错误信息
+        String errorMessage = e.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .map(FieldError::getDefaultMessage)
+                .collect(Collectors.joining(", "));
+
+        ErrorResponse errorResponse = ErrorResponse.invalidRequest(errorMessage);
+
+        return Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse));
     }
 
     /**
-     * 处理非法参数异常
+     * 处理通用运行时异常
      */
-    @ExceptionHandler(IllegalArgumentException.class)
-    public Result<Void> handleIllegalArgumentException(IllegalArgumentException e) {
-        log.error("非法参数异常: {}", e.getMessage(), e);
-        return Result.error(ResultCode.PARAM_ERROR.getCode(), e.getMessage());
+    @ExceptionHandler(RuntimeException.class)
+    public Mono<ResponseEntity<ErrorResponse>> handleRuntimeException(RuntimeException e) {
+        log.error("运行时异常: ", e);
+
+        ErrorResponse errorResponse = ErrorResponse.of(
+                "server_error",
+                "服务器错误: " + e.getMessage()
+        );
+
+        return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse));
     }
 
     /**
-     * 处理其他未知异常
+     * 处理所有未捕获的异常
      */
     @ExceptionHandler(Exception.class)
-    public Result<Void> handleException(Exception e) {
-        log.error("系统异常: {}", e.getMessage(), e);
-        return Result.error(ResultCode.ERROR);
+    public Mono<ResponseEntity<ErrorResponse>> handleException(Exception e) {
+        log.error("未知异常: ", e);
+
+        ErrorResponse errorResponse = ErrorResponse.of(
+                "server_error",
+                "服务器内部错误"
+        );
+
+        return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse));
     }
 }

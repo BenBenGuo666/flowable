@@ -1,162 +1,215 @@
 package com.demo.flowable.service;
 
-import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.demo.flowable.data.constants.DataConstants;
-import com.demo.flowable.data.entity.User;
-import com.demo.flowable.data.mapper.UserMapper;
-import com.demo.flowable.data.service.UserDataService;
-import com.demo.flowable.dto.LoginRequest;
-import com.demo.flowable.dto.LoginResponse;
+import com.demo.flowable.auth.ReactiveUserService;
+import com.demo.flowable.config.JwtConfig;
+import com.demo.flowable.dto.TokenResponse;
 import com.demo.flowable.dto.UserDTO;
-import com.demo.flowable.util.JwtUtil;
+import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.authentication.ReactiveAuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
-
-import java.util.List;
+import reactor.core.publisher.Mono;
 
 /**
- * 认证服务层
+ * 认证业务服务（响应式 OAuth 2.0）
+ * 处理登录、Token 刷新、登出等认证相关业务逻辑
+ *
+ * 职责：
+ * - 封装所有认证相关的业务逻辑
+ * - 协调多个服务（TokenService、UserService、BlacklistService）
+ * - 提供简洁的业务接口给控制器层调用
+ *
+ * @author e-Benben.Guo
+ * @since 2025/11
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
 
-    private final UserMapper userMapper;
-    private final JwtUtil jwtUtil;
-    private final PasswordEncoder passwordEncoder;
-
-    private final UserDataService userDataService;
-
-    public User findByUsername(String username) {
-        return userDataService.getOne(Wrappers.<User>lambdaQuery()
-                .eq(User::getUsername, username)
-                .last(DataConstants.SQL_LAST_LIMIT));
-    }
+    private final ReactiveAuthenticationManager authenticationManager;
+    private final TokenService tokenService;
+    private final TokenBlacklistService tokenBlacklistService;
+    private final ReactiveUserService reactiveUserService;
+    private final JwtConfig jwtConfig;
 
     /**
      * 用户登录
      *
-     * @param loginRequest 登录请求
-     * @return 登录响应（包含token和用户信息）
+     * @param username 用户名
+     * @param password 密码
+     * @return TokenResponse 包含 access_token 和 refresh_token
      */
-    public LoginResponse login(LoginRequest loginRequest) {
-        log.info("用户登录: {}", loginRequest.getUsername());
+    public Mono<TokenResponse> login(String username, String password) {
+        log.info("执行登录业务逻辑: {}", username);
 
-        // 根据用户名查询用户
-        User user = userMapper.selectByUsername(loginRequest.getUsername());
-        if (user == null) {
-            throw new RuntimeException("用户名或密码错误");
-        }
+        // 创建认证凭证
+        UsernamePasswordAuthenticationToken authToken =
+                new UsernamePasswordAuthenticationToken(username, password);
 
-        // 检查用户状态
-        if (user.getStatus() == null || user.getStatus() != 1) {
-            throw new RuntimeException("用户已被禁用");
-        }
-
-        // 验证密码
-        if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
-            throw new RuntimeException("用户名或密码错误");
-        }
-
-        // 生成JWT Token
-        String token = jwtUtil.generateToken(user.getUsername(), user.getId());
-
-        // 查询用户权限
-        List<String> permissions = userMapper.selectPermissionCodesByUserId(user.getId());
-
-        // 构造用户DTO
-        UserDTO userDTO = new UserDTO();
-        BeanUtils.copyProperties(user, userDTO);
-        userDTO.setPassword(null); // 不返回密码
-
-        log.info("用户登录成功: {}", loginRequest.getUsername());
-
-        return new LoginResponse(token, userDTO, permissions);
+        // 执行认证
+        return authenticationManager.authenticate(authToken)
+                .flatMap(this::generateTokenResponse)
+                .doOnSuccess(response -> log.info("用户登录成功: {}", username))
+                .doOnError(e -> log.error("登录失败: {}", e.getMessage()));
     }
 
     /**
-     * 用户注册
+     * 刷新 Token
      *
-     * @param userDTO 用户信息
-     * @return 用户ID
+     * @param refreshToken Refresh Token
+     * @return TokenResponse 包含新的 access_token 和 refresh_token
      */
-    @Transactional(rollbackFor = Exception.class)
-    public Long register(UserDTO userDTO) {
-        log.info("用户注册: {}", userDTO.getUsername());
+    public Mono<TokenResponse> refreshToken(String refreshToken) {
+        log.info("执行刷新 Token 业务逻辑");
 
-        // 验证必填字段
-        if (!StringUtils.hasText(userDTO.getUsername())) {
-            throw new RuntimeException("用户名不能为空");
-        }
-        if (!StringUtils.hasText(userDTO.getPassword())) {
-            throw new RuntimeException("密码不能为空");
+        // 验证 Refresh Token 类型
+        if (!tokenService.isRefreshToken(refreshToken)) {
+            return Mono.error(new IllegalArgumentException("不是有效的 Refresh Token"));
         }
 
-        // 检查用户名是否已存在
-        User existUser = userMapper.selectByUsername(userDTO.getUsername());
-        if (existUser != null) {
-            throw new RuntimeException("用户名已存在");
-        }
+        // 验证 Token 是否有效（签名、过期、黑名单）
+        return tokenService.validateToken(refreshToken)
+                .flatMap(isValid -> {
+                    if (!isValid) {
+                        return Mono.error(new IllegalArgumentException("Refresh Token 无效或已过期"));
+                    }
 
-        // 转换DTO为实体
-        User user = new User();
-        BeanUtils.copyProperties(userDTO, user);
+                    // 解析 Token 获取用户信息
+                    String username = tokenService.getUsernameFromToken(refreshToken);
+                    Long userId = tokenService.getUserIdFromToken(refreshToken);
 
-        // 加密密码
-        user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
+                    // 查询用户详情（获取最新权限）
+                    return reactiveUserService.findByUsername(username)
+                            .flatMap(userDetails -> {
+                                // 生成新的 Token
+                                String newAccessToken = tokenService.generateAccessToken(
+                                        username, userId, userDetails.getAuthorities());
+                                String newRefreshToken = tokenService.generateRefreshToken(username, userId);
 
-        // 默认状态为启用
-        if (user.getStatus() == null) {
-            user.setStatus(1);
-        }
+                                // 将旧的 Refresh Token 加入黑名单
+                                return revokeToken(refreshToken)
+                                        .then(Mono.defer(() -> {
+                                            TokenResponse tokenResponse = buildTokenResponse(
+                                                    newAccessToken, newRefreshToken, null);
 
-        // 保存用户
-        userMapper.insert(user);
-        log.info("用户注册成功, ID: {}", user.getId());
-
-        return user.getId();
+                                            log.info("Token 刷新成功: {}", username);
+                                            return Mono.just(tokenResponse);
+                                        }));
+                            })
+                            .switchIfEmpty(Mono.error(new IllegalArgumentException("用户不存在")));
+                });
     }
 
     /**
-     * 根据Token获取当前用户信息
+     * 登出（废除 Token）
      *
-     * @param token JWT Token
-     * @return 用户信息
+     * @param token Access Token
+     * @return 完成信号
      */
-    public UserDTO getCurrentUser(String token) {
-        log.info("获取当前用户信息");
+    public Mono<Void> logout(String token) {
+        log.info("执行登出业务逻辑");
+        return revokeToken(token)
+                .doOnSuccess(v -> log.info("登出成功"));
+    }
 
-        // 从Token中获取用户名
-        String username = jwtUtil.getUsernameFromToken(token);
-        if (!StringUtils.hasText(username)) {
-            throw new RuntimeException("无效的Token");
+    /**
+     * 获取当前用户信息
+     *
+     * @param authentication 认证信息
+     * @return 用户信息 DTO
+     */
+    public Mono<UserDTO> getCurrentUser(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return Mono.error(new IllegalArgumentException("未认证"));
         }
 
-        // 查询用户
-        User user = userMapper.selectByUsername(username);
-        if (user == null) {
-            throw new RuntimeException("用户不存在");
+        String username = authentication.getName();
+        log.info("获取当前用户信息: {}", username);
+
+        return reactiveUserService.findUserByUsername(username)
+                .map(user -> {
+                    UserDTO userDTO = new UserDTO();
+                    BeanUtils.copyProperties(user, userDTO);
+                    userDTO.setPassword(null); // 不返回密码
+
+                    // 添加权限信息
+                    var authorities = authentication.getAuthorities().stream()
+                            .map(authority -> authority.getAuthority())
+                            .toList();
+                    userDTO.setAuthorities(authorities);
+
+                    return userDTO;
+                })
+                .switchIfEmpty(Mono.error(new IllegalArgumentException("用户不存在")));
+    }
+
+    /**
+     * 生成 Token 响应
+     *
+     * @param authentication 认证信息
+     * @return TokenResponse
+     */
+    private Mono<TokenResponse> generateTokenResponse(Authentication authentication) {
+        String username = authentication.getName();
+
+        // 查询用户信息
+        return reactiveUserService.findUserByUsername(username)
+                .map(user -> {
+                    // 生成 Access Token 和 Refresh Token
+                    String accessToken = tokenService.generateAccessToken(
+                            username, user.getId(), authentication.getAuthorities());
+                    String refreshToken = tokenService.generateRefreshToken(username, user.getId());
+
+                    // 构建用户 DTO
+                    UserDTO userDTO = new UserDTO();
+                    BeanUtils.copyProperties(user, userDTO);
+                    userDTO.setPassword(null); // 不返回密码
+
+                    // 构建 Token 响应
+                    return buildTokenResponse(accessToken, refreshToken, userDTO);
+                });
+    }
+
+    /**
+     * 构建 Token 响应对象
+     *
+     * @param accessToken  Access Token
+     * @param refreshToken Refresh Token
+     * @param userDTO      用户信息（可选）
+     * @return TokenResponse
+     */
+    private TokenResponse buildTokenResponse(String accessToken, String refreshToken, UserDTO userDTO) {
+        return TokenResponse.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .tokenType("Bearer")
+                .expiresIn(jwtConfig.getAccessTokenExpiration() / 1000) // 转换为秒
+                .user(userDTO)
+                .build();
+    }
+
+    /**
+     * 废除 Token（加入黑名单）
+     *
+     * @param token Token
+     * @return 完成信号
+     */
+    private Mono<Void> revokeToken(String token) {
+        try {
+            Claims claims = tokenService.parseToken(token);
+            String tokenId = claims.getId();
+            long expirationTime = claims.getExpiration().getTime();
+
+            return tokenBlacklistService.addToBlacklist(tokenId, expirationTime)
+                    .doOnSuccess(v -> log.debug("Token 已加入黑名单: {}", tokenId));
+        } catch (Exception e) {
+            log.error("废除 Token 失败: {}", e.getMessage());
+            return Mono.error(new IllegalArgumentException("Token 无效"));
         }
-
-        // 检查用户状态
-        if (user.getStatus() == null || user.getStatus() != 1) {
-            throw new RuntimeException("用户已被禁用");
-        }
-
-        // 构造用户DTO
-        UserDTO userDTO = new UserDTO();
-        BeanUtils.copyProperties(user, userDTO);
-        userDTO.setPassword(null); // 不返回密码
-
-        // 查询用户角色
-        userDTO.setRoleIds(userMapper.selectRoleIdsByUserId(user.getId()));
-
-        return userDTO;
     }
 }

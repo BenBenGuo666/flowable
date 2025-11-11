@@ -46,4 +46,9 @@ public class UserDTO {
      * 角色列表
      */
     private List<RoleDTO> roles;
+
+    /**
+     * 权限列表（用于 OAuth 2.0 响应）
+     */
+    private List<String> authorities;
 }
