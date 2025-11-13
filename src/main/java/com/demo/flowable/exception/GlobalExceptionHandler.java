@@ -75,6 +75,24 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * 处理速率限制超限异常
+     */
+    @ExceptionHandler(RateLimitExceededException.class)
+    public Mono<ResponseEntity<ErrorResponse>> handleRateLimitExceededException(RateLimitExceededException e) {
+        log.warn("速率限制超限: userId={}, limit={}", e.getUserId(), e.getLimit());
+
+        ErrorResponse errorResponse = ErrorResponse.of(
+                "rate_limit_exceeded",
+                e.getMessage()
+        );
+
+        return Mono.just(ResponseEntity
+                .status(HttpStatus.TOO_MANY_REQUESTS)
+                .header("Retry-After", String.valueOf(e.getResetTimeSeconds()))
+                .body(errorResponse));
+    }
+
+    /**
      * 处理参数校验异常
      */
     @ExceptionHandler(WebExchangeBindException.class)

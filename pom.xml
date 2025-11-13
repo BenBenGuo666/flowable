@@ -154,6 +154,12 @@
             <artifactId>r2dbc-pool</artifactId>
         </dependency>
 
+        <!-- Caffeine 缓存（用于速率限制） -->
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+        </dependency>
+
 
     </dependencies>
 

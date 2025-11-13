@@ -2,6 +2,7 @@ package com.demo.flowable.controller;
 
 import com.demo.flowable.dto.*;
 import com.demo.flowable.service.AuthService;
+import com.demo.flowable.util.TokenExtractor;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 /**
@@ -36,6 +38,7 @@ import reactor.core.publisher.Mono;
 public class OAuth2AuthController {
 
     private final AuthService authService;
+    private final TokenExtractor tokenExtractor;
 
     /**
      * 用户登录
@@ -71,21 +74,32 @@ public class OAuth2AuthController {
      * POST /auth/logout
      * 需要携带 Authorization: Bearer {access_token}
      *
-     * @param authorization Authorization 请求头
+     * @param exchange ServerWebExchange
      * @return 成功消息
      */
     @PostMapping("/logout")
-    public Mono<ResponseEntity<MessageResponse>> logout(@RequestHeader("Authorization") String authorization) {
-        // 提取 Token（去掉 "Bearer " 前缀）
-        String token = extractToken(authorization);
+    public Mono<ResponseEntity<MessageResponse>> logout(ServerWebExchange exchange) {
+        log.info("收到登出请求: path={}", exchange.getRequest().getURI().getPath());
 
-        return authService.logout(token)
-                .then(Mono.just(ResponseEntity.ok(new MessageResponse("登出成功"))))
-                .onErrorResume(e -> {
-                    log.error("登出失败: {}", e.getMessage());
-                    return Mono.just(ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                            .body(new MessageResponse("登出失败")));
-                });
+        // 使用 TokenExtractor 从请求头中提取 Token
+        return tokenExtractor.extractToken(exchange)
+                .flatMap(token -> {
+                    log.debug("成功提取 Token，准备执行登出操作");
+                    // 调用 AuthService 执行登出逻辑（将 Token 加入黑名单）
+                    return authService.logout(token)
+                            .then(Mono.just(ResponseEntity.ok(new MessageResponse("登出成功"))))
+                            .doOnSuccess(response -> log.info("登出成功"))
+                            .onErrorResume(e -> {
+                                log.error("登出失败: {}", e.getMessage(), e);
+                                return Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                                        .body(new MessageResponse("登出失败: " + e.getMessage())));
+                            });
+                })
+                .switchIfEmpty(Mono.defer(() -> {
+                    log.warn("登出失败: 请求头中未找到有效的 Token");
+                    return Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .body(new MessageResponse("登出失败: 缺少有效的认证令牌")));
+                }));
     }
 
     /**
@@ -103,19 +117,6 @@ public class OAuth2AuthController {
                 .flatMap(authService::getCurrentUser)
                 .map(ResponseEntity::ok)
                 .onErrorResume(this::handleAuthError);
-    }
-
-    /**
-     * 提取 Token（去掉 "Bearer " 前缀）
-     *
-     * @param authorization Authorization 请求头
-     * @return Token
-     */
-    private String extractToken(String authorization) {
-        if (authorization != null && authorization.startsWith("Bearer ")) {
-            return authorization.substring(7);
-        }
-        return authorization;
     }
 
     /**

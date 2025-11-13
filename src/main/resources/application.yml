@@ -60,6 +60,13 @@ token:
     enabled: true
     cleanup-interval: 3600000  # 清理间隔：1小时（毫秒）
 
+# 速率限制配置
+rate-limit:
+  enabled: true                 # 是否启用速率限制
+  requests-per-minute: 200      # 每用户每分钟最大请求次数
+  time-window-minutes: 1        # 时间窗口（分钟）
+  cache-max-size: 10000         # 缓存最大用户数
+
 # 日志配置
 logging:
   level:

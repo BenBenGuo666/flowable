@@ -107,14 +107,33 @@ public class AuthService {
 
     /**
      * 登出（废除 Token）
+     * 将用户的 Token 加入黑名单，使其立即失效
      *
      * @param token Access Token
      * @return 完成信号
      */
     public Mono<Void> logout(String token) {
         log.info("执行登出业务逻辑");
-        return revokeToken(token)
-                .doOnSuccess(v -> log.info("登出成功"));
+
+        try {
+            // 解析 Token 获取用户信息（用于日志记录）
+            Claims claims = tokenService.parseToken(token);
+            String username = claims.getSubject();
+            Long userId = tokenService.getUserIdFromToken(token);
+            String tokenId = claims.getId();
+
+            log.info("用户请求登出: username={}, userId={}, tokenId={}", username, userId, tokenId);
+
+            // 将 Token 加入黑名单
+            return revokeToken(token)
+                    .doOnSuccess(v -> log.info("用户登出成功: username={}, userId={}, Token 已加入黑名单",
+                            username, userId))
+                    .doOnError(e -> log.error("用户登出失败: username={}, userId={}, 错误: {}",
+                            username, userId, e.getMessage()));
+        } catch (Exception e) {
+            log.error("登出失败: 无法解析 Token - {}", e.getMessage());
+            return Mono.error(new IllegalArgumentException("Token 无效，无法执行登出操作"));
+        }
     }
 
     /**

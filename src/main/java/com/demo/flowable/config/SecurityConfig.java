@@ -64,52 +64,13 @@ public class SecurityConfig {
     }
 
     /**
-     * JWT 认证管理器（用于 OAuth 2.0 Resource Server）
-     */
-    @Bean
-    public JwtReactiveAuthenticationManager jwtAuthenticationManager() {
-        JwtReactiveAuthenticationManager authenticationManager =
-                new JwtReactiveAuthenticationManager(jwtConfig.reactiveJwtDecoder());
-
-        // 自定义 JWT 验证逻辑，增加黑名单检查
-        authenticationManager.setJwtAuthenticationConverter(jwt -> {
-            String tokenId = jwt.getId();
-
-            // 检查 Token 是否在黑名单中
-            return tokenBlacklistService.isBlacklisted(tokenId)
-                    .flatMap(isBlacklisted -> {
-                        if (isBlacklisted) {
-                            log.warn("Token 在黑名单中，拒绝访问: {}", tokenId);
-                            return reactor.core.publisher.Mono.error(
-                                    new org.springframework.security.access.AccessDeniedException("Token 已被废除"));
-                        }
-
-                        // 从 JWT Claims 中提取权限
-                        var authorities = jwt.getClaimAsStringList("authorities");
-                        if (authorities == null) {
-                            authorities = java.util.Collections.singletonList("ROLE_USER");
-                        }
-
-                        var grantedAuthorities = authorities.stream()
-                                .map(org.springframework.security.core.authority.SimpleGrantedAuthority::new)
-                                .collect(java.util.stream.Collectors.toList());
-
-                        return reactor.core.publisher.Mono.just(
-                                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
-                                        jwt.getSubject(),
-                                        null,
-                                        grantedAuthorities
-                                )
-                        );
-                    });
-        });
-
-        return authenticationManager;
-    }
-
-    /**
      * Security Web Filter Chain（响应式）
-     * 配置 OAuth 2.0 Resource Server 和访问控制规则
+     * 使用自定义的 JwtAuthenticationFilter 进行令牌验证
+     *
+     * 注意：
+     * - JwtAuthenticationFilter 会自动拦截并验证所有请求的 Token
+     * - 不再使用 OAuth2ResourceServer，改用自定义过滤器（更灵活，易于扩展）
+     * - 白名单和黑名单在 JwtAuthenticationFilter 中配置
      */
     @Bean
     public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
@@ -120,41 +81,21 @@ public class SecurityConfig {
                 // 配置 CORS
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
-                // 配置 OAuth 2.0 Resource Server（JWT）
-                .oauth2ResourceServer(oauth2 -> oauth2
-                        .authenticationManagerResolver(exchange ->
-                                reactor.core.publisher.Mono.just(jwtAuthenticationManager()))
-                )
+                // 禁用默认的表单登录和 HTTP Basic 认证
+                .formLogin(ServerHttpSecurity.FormLoginSpec::disable)
+                .httpBasic(ServerHttpSecurity.HttpBasicSpec::disable)
 
                 // 配置授权规则
+                // 注意：由于使用了自定义的 JwtAuthenticationFilter，
+                // 这里的配置主要用于兜底和方法级权限控制
                 .authorizeExchange(exchanges -> exchanges
-                        // 允许 OAuth 2.0 认证相关接口匿名访问（白名单）
-                        .pathMatchers(
-                                "/api/auth/login",      // 用户登录
-                                "/api/auth/refresh"     // 刷新 Token
-                        ).permitAll()
+                        // ✅ 认证接口白名单（在 JwtAuthenticationFilter 中也有配置）
+                        .pathMatchers("/api/auth/login", "/api/auth/refresh").permitAll()
 
-                        // 允许访问数据库初始化接口（仅开发环境，生产环境应移除）
-                        .pathMatchers("/api/init/**").permitAll()
+                        // ❌ 禁用初始化接口
+                        .pathMatchers("/api/init/**").denyAll()
 
-                        // Flowable 流程相关接口（暂时开放，后续应根据权限控制）
-                        .pathMatchers(
-                                "/api/process-definition/**",
-                                "/api/process-instance/**",
-                                "/api/task/**",
-                                "/api/process-template/**"
-                        ).permitAll()
-
-                        // 表单相关接口（暂时开放）
-                        .pathMatchers("/api/form-definition/**", "/api/form-data/**").permitAll()
-
-                        // 请假相关接口（暂时开放）
-                        .pathMatchers("/api/leave/**").permitAll()
-
-                        // 用户、角色、权限接口（暂时开放，后续应限制为管理员权限）
-                        .pathMatchers("/api/user/**", "/api/role/**", "/api/permission/**").permitAll()
-
-                        // 其他所有请求都需要认证（Bearer Token）
+                        // 🔐 其他所有接口需要认证（由 JwtAuthenticationFilter 处理）
                         .anyExchange().authenticated()
                 )
 
